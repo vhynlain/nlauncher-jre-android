@@ -24,6 +24,18 @@ if [ -e "$image/lib/libc++_shared.so" ]; then
   die "image unexpectedly contains libc++_shared.so (libc++ must be linked statically)"
 fi
 
+# --- developer tools (this fork ships a JDK: javac, jlink, jar must exist) ---
+for f in bin/javac bin/jlink bin/jar lib/jrt-fs.jar; do
+  [ -e "$image/$f" ] || die "image is missing $f (is jlink-modules.txt missing jdk.compiler / jdk.jlink / jdk.jartool?)"
+done
+# JDK 21 jlink needs a jmods directory next to the image to link anything on the device.
+# Set INCLUDE_JMODS=1 to ship it (adds roughly 100+ MB uncompressed).
+if [ "${INCLUDE_JMODS:-0}" = 1 ]; then
+  [ -d "$BUILD_OUT/images/jmods" ] || die "no jmods at $BUILD_OUT/images/jmods"
+  rm -rf "$image/jmods"
+  cp -R "$BUILD_OUT/images/jmods" "$image/jmods"
+fi
+
 # --- drop files that are useless on a device ---
 find "$image" \( -name '*.debuginfo' -o -name '*.diz' -o -name 'src.zip' \) -exec rm -f {} +
 
