@@ -60,6 +60,13 @@ while read -r p; do
   log "applied $p"
 done < <(series_list)
 
+# nl-0007: launcher honours NLAUNCHER_JAVA_HOME (a script, not a .patch: it anchors on the function signature, so it needs no exact context)
+if [ "$MODE" = apply ]; then
+  python3 "$REPO_DIR/scripts/patch-launcher-home.py" "$SRC_DIR" || die "launcher patch failed (scripts/patch-launcher-home.py)"
+else
+  log "launcher patch (scripts/patch-launcher-home.py) is not part of --check; it runs when applying"
+fi
+
 if [ "$MODE" = apply ]; then
   patches_hash > "$SRC_DIR/.nlauncher-patched"
   log "$n patches applied to $SRC_DIR"

@@ -138,6 +138,7 @@ patches_hash() {
     grep -v '^[[:space:]]*\(#\|$\)' "$series" | while read -r p; do
       cat "$REPO_DIR/patches/$p"
     done
+    cat "$REPO_DIR/scripts/patch-launcher-home.py"
   } | if command -v sha256sum >/dev/null 2>&1; then sha256sum; else shasum -a 256; fi | awk '{print $1}'
 }
 
