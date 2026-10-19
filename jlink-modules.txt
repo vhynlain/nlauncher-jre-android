@@ -19,7 +19,12 @@ jdk.security.auth    # JAAS login modules referenced by some auth libraries
 jdk.dynalink         # dynamic linking API (required by standalone Nashorn that some mods bundle)
 jdk.random           # extra RandomGenerator algorithms (RandomGenerator.of("L64X128MixRandom"))
 
-# Deliberately not included: compilers and dev tools (jdk.compiler, jdk.jshell,
-# jdk.jdi, jdk.jdwp.agent, jdk.attach, jdk.jcmd, jdk.jlink, jdk.jpackage,
-# jdk.hotspot.agent ...), jdk.incubator.*, jdk.accessibility,
+# --- Developer tools (needed to run Gradle / Android Gradle Plugin on the device) ---
+jdk.compiler         # javac (Gradle compileJava, AGP)
+jdk.jartool          # jar tool and java.util.jar helpers
+jdk.jlink            # jlink + jmod (AGP builds core-for-system-modules with jlink)
+jdk.jdeps            # jdeps / class dependency analysis used by some Gradle plugins
+
+# Deliberately not included: jdk.jshell, jdk.jdi, jdk.jdwp.agent, jdk.attach,
+# jdk.jcmd, jdk.jpackage, jdk.hotspot.agent ..., jdk.incubator.*, jdk.accessibility,
 # jdk.unsupported.desktop, java.smartcardio, jdk.crypto.cryptoki, jdk.sctp.
