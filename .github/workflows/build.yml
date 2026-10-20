@@ -1,7 +1,8 @@
 name: Build JRE (ubuntu)
 
 # Main build path: GitHub-hosted ubuntu-24.04 (free for public repositories).
-# - workflow_dispatch: build the chosen target(s) and upload workflow artifacts.
+# - workflow_dispatch: build the chosen target(s) and upload workflow artifacts;
+#   with "publish" ticked it also creates the GitHub Release (tag from config.env).
 # - push of a tag jre21-<version>.<build>-nl<rev>: build, then publish a GitHub
 #   Release with the JRE archives, their .sha256 files and the source bundle.
 on:
@@ -12,6 +13,10 @@ on:
         type: choice
         options: [aarch64, arm, both]
         default: aarch64
+      publish:
+        description: 'Publish a GitHub Release (tag taken from config.env)'
+        type: boolean
+        default: false
   push:
     tags: ['jre21-*']
 
@@ -150,7 +155,9 @@ jobs:
             out/jre21-android-sources.tar.sha256
 
   release:
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/jre21-')
+    if: >-
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/jre21-')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.publish)
     needs: [plan, build, sources]
     runs-on: ubuntu-24.04
     permissions:
@@ -171,6 +178,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.plan.outputs.tag }}
+          SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
           . scripts/common.sh
@@ -187,4 +195,11 @@ jobs:
             echo "\`jre21-android-sources.tar\` is the complete corresponding source of these binaries (upstream tarball, patches, build scripts, header packages)."
             echo "License: GPLv2 with the Classpath Exception (HotSpot: GPLv2). See LICENSE."
           } > notes.md
-          gh release create "$TAG" --title "$TAG" --notes-file notes.md dist/*.tar.xz dist/*.tar dist/*.sha256
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "$TAG" --notes-file notes.md
+            gh release upload "$TAG" dist/*.tar.xz dist/*.tar dist/*.sha256 --clobber
+          else
+            # --target makes gh create the tag at this commit when it does not exist yet
+            gh release create "$TAG" --target "$SHA" --title "$TAG" --notes-file notes.md \
+              dist/*.tar.xz dist/*.tar dist/*.sha256
+          fi
